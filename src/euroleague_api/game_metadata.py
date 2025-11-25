@@ -40,15 +40,37 @@ class GameMetadata(EuroLeagueData):
 
         try:
             data = r.json()
-        except JSONDecodeError:
+        except JSONDecodeError as exc:
             raise ValueError(
-                f"Game code, {gamecode}, season {season} did not return any "
-                "data."
-            )
+                f"Game code, {gamecode}, season {season} "
+                "did not return any data."
+            ) from exc
         metadata_df = pd.json_normalize(data)
         metadata_df.insert(0, 'Season', season)
         metadata_df.insert(1, 'Gamecode', gamecode)
+        metadata_df["Round"] = metadata_df["Round"].astype(int)
         return metadata_df
+
+    def get_game_metadata_round(
+        self, season: int, round_number: int
+    ) -> pd.DataFrame:
+        """
+        A function that gets the metadata of all games in a single round.
+
+        Args:
+            season (int): The start year of the season.
+            round_number (int): The round of the season.
+
+        Returns:
+            pd.DataFrame: A dataframe with the metadata of all games in a
+                single round.
+        """
+        df = self.get_round_data_from_game_data(
+            season=season,
+            round_number=round_number,
+            fun=self.get_game_metadata
+        )
+        return df
 
     def get_game_metadata_single_season(self, season: int) -> pd.DataFrame:
         """
